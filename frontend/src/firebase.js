@@ -17,10 +17,18 @@ export const firebaseApp = initializeApp(firebaseConfig);
 // "client is offline" errors in Safari Private Browsing, strict tracking
 // prevention, and some corporate/VPN networks that block the default
 // connection style Firestore normally uses.
-export const db = initializeFirestore(firebaseApp, {
-  experimentalForceLongPolling: true,
-  useFetchStreams: false,
-});
+//
+// Also explicitly target the "default" named database (Firestore supports
+// multiple databases per project; if the console created one named
+// "default" rather than the implicit "(default)", the SDK needs to be told).
+export const db = initializeFirestore(
+  firebaseApp,
+  {
+    experimentalForceLongPolling: true,
+    useFetchStreams: false,
+  },
+  'default'
+);
 
 export const firebaseAuth = getAuth(firebaseApp);
 
