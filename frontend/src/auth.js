@@ -1,59 +1,96 @@
-// Phone-number identity, backed by Firestore for real persistence.
+// Username + password identity, backed by Firestore for real persistence.
 //
-// This is NOT real SMS/OTP-verified authentication — Firebase Phone Auth requires
-// billing/reCAPTCHA setup we're skipping for simplicity. Instead:
-//   - Your phone number is your "account key" in Firestore (users/{phone})
-//   - We sign in anonymously to Firebase under the hood just to satisfy Firestore's
-//     auth requirement
-//   - Anyone who knows your exact phone number could technically open your data if
-//     they also have the app URL — same trust model as a shared bookmark/password
-//     you haven't told anyone. Don't share your phone number+app link publicly.
+// This is a lightweight app-level auth, not a bank-grade auth system:
+//   - Passwords are hashed (SHA-256 + per-account salt) before being stored/compared,
+//     never stored in plaintext.
+//   - We still sign in anonymously to Firebase under the hood, just to satisfy
+//     Firestore's "must be authenticated" security rule — the username/password
+//     check itself is done in application code against the stored hash.
+//   - One Firestore doc per username (users/{username}) holds the account's salt,
+//     password hash, and all app data (people/transactions).
 //
-// The upside: your data now lives in the cloud (Firestore), not just one browser's
-// localStorage, so clearing browser data / reinstalling / switching devices no
-// longer wipes it.
+// Backward compatibility: accounts created before this feature (username = phone
+// number, no password) are auto-migrated the first time that username is used to
+// log in — whatever password is entered then becomes the account's password.
 
-import { ensureFirebaseSignedIn } from './firebase.js';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { db, ensureFirebaseSignedIn } from './firebase.js';
+import { generateSalt, hashPassword } from './crypto.js';
 
-const REGISTERED_PHONE_KEY = 'lender-tracker-phone-v1';
 const SESSION_KEY = 'lender-tracker-session-v1';
+const USERNAME_KEY = 'lender-tracker-username-v1';
 
-function normalizePhone(phone) {
-  return (phone || '').replace(/[\s\-()]/g, '').trim();
+function normalizeUsername(username) {
+  return (username || '').trim().toLowerCase();
+}
+
+function userDocRef(username) {
+  return doc(db, 'users', username);
 }
 
 export const auth = {
-  normalizePhone,
-
-  isRegistered() {
-    return Boolean(localStorage.getItem(REGISTERED_PHONE_KEY));
-  },
-
-  getRegisteredPhone() {
-    return localStorage.getItem(REGISTERED_PHONE_KEY) || '';
-  },
-
-  async signIn(phone) {
-    const normalized = normalizePhone(phone);
-    if (!normalized || normalized.length < 6) {
-      throw new Error('Enter a valid phone number');
-    }
-    await ensureFirebaseSignedIn();
-    localStorage.setItem(REGISTERED_PHONE_KEY, normalized);
-    sessionStorage.setItem(SESSION_KEY, '1');
-    return normalized;
+  getUsername() {
+    return sessionStorage.getItem(USERNAME_KEY) || '';
   },
 
   isLoggedIn() {
-    return sessionStorage.getItem(SESSION_KEY) === '1' && this.isRegistered();
+    return sessionStorage.getItem(SESSION_KEY) === '1' && Boolean(this.getUsername());
   },
 
   logout() {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(USERNAME_KEY);
   },
 
-  switchAccount() {
-    localStorage.removeItem(REGISTERED_PHONE_KEY);
-    sessionStorage.removeItem(SESSION_KEY);
+  /**
+   * Handles sign-up, login, and legacy-account password migration in one step:
+   * - New username → creates the account with this password.
+   * - Existing username with no password set yet (legacy data) → sets this
+   *   password on the existing account (no data lost).
+   * - Existing username with a password → verifies it matches.
+   */
+  async authenticate(usernameInput, password) {
+    const username = normalizeUsername(usernameInput);
+    if (!username || username.length < 3) {
+      throw new Error('Username must be at least 3 characters');
+    }
+    if (!password || password.length < 4) {
+      throw new Error('Password must be at least 4 characters');
+    }
+
+    await ensureFirebaseSignedIn();
+    const ref = userDocRef(username);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+      // Sign up: brand new account
+      const salt = generateSalt();
+      const passwordHash = await hashPassword(password, salt);
+      await setDoc(ref, {
+        salt,
+        passwordHash,
+        people: [],
+        transactions: [],
+        nextPersonId: 1,
+        nextTxId: 1,
+      });
+    } else {
+      const data = snap.data();
+      if (!data.passwordHash) {
+        // Legacy account (created before passwords existed) — set it now.
+        const salt = generateSalt();
+        const passwordHash = await hashPassword(password, salt);
+        await updateDoc(ref, { salt, passwordHash });
+      } else {
+        const candidateHash = await hashPassword(password, data.salt);
+        if (candidateHash !== data.passwordHash) {
+          throw new Error('Incorrect password');
+        }
+      }
+    }
+
+    sessionStorage.setItem(USERNAME_KEY, username);
+    sessionStorage.setItem(SESSION_KEY, '1');
+    return username;
   },
 };

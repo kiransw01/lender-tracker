@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
 import TransactionModal from '../components/TransactionModal.jsx';
+import PersonModal from '../components/PersonModal.jsx';
 import { formatCurrency, formatDate } from '../format.js';
 
 export default function PersonDetail() {
@@ -11,6 +12,7 @@ export default function PersonDetail() {
   const [error, setError] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [editingTx, setEditingTx] = useState(null);
+  const [editingPerson, setEditingPerson] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -56,7 +58,10 @@ export default function PersonDetail() {
           <h2>{person.name}</h2>
           {person.notes && <div className="notes">{person.notes}</div>}
         </div>
-        <button className="secondary danger" onClick={handleDeletePerson}>Delete</button>
+        <div className="detail-header-actions">
+          <button className="secondary" onClick={() => setEditingPerson(true)}>Edit</button>
+          <button className="secondary danger" onClick={handleDeletePerson}>Delete</button>
+        </div>
       </div>
 
       <div className="balance-banner">
@@ -108,6 +113,17 @@ export default function PersonDetail() {
           onClose={() => setEditingTx(null)}
           onSaved={() => {
             setEditingTx(null);
+            load();
+          }}
+        />
+      )}
+
+      {editingPerson && (
+        <PersonModal
+          person={person}
+          onClose={() => setEditingPerson(false)}
+          onSaved={() => {
+            setEditingPerson(false);
             load();
           }}
         />

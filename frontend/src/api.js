@@ -1,62 +1,31 @@
-// Firestore-backed storage API — one document per phone number, holding the full
-// { people, transactions, nextPersonId, nextTxId } shape (same as the old
-// localStorage version). This keeps all CRUD logic identical, just swapping where
-// the store is persisted.
-//
-// On first login for a phone number, if there's leftover data in this browser's
-// localStorage (from the older local-only version of the app), it's migrated into
-// Firestore automatically so nothing is lost.
+// Firestore-backed storage API — one document per username, holding the full
+// { people, transactions, nextPersonId, nextTxId, salt, passwordHash } shape.
+// Auth (auth.js) manages salt/passwordHash; this module manages the app data
+// fields within the same document.
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, ensureFirebaseSignedIn } from './firebase.js';
 import { auth } from './auth.js';
 
-const LEGACY_LOCAL_STORE_KEY = 'lender-tracker-data-v1';
-
-function emptyStore() {
-  return { people: [], transactions: [], nextPersonId: 1, nextTxId: 1 };
-}
-
-function userDocRef(phone) {
-  return doc(db, 'users', phone);
-}
-
-function readLegacyLocalStore() {
-  try {
-    const raw = localStorage.getItem(LEGACY_LOCAL_STORE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+function userDocRef(username) {
+  return doc(db, 'users', username);
 }
 
 async function loadStore() {
   await ensureFirebaseSignedIn();
-  const phone = auth.getRegisteredPhone();
-  if (!phone) throw new Error('Not signed in');
+  const username = auth.getUsername();
+  if (!username) throw new Error('Not signed in');
 
-  const ref = userDocRef(phone);
+  const ref = userDocRef(username);
   const snap = await getDoc(ref);
-
-  if (snap.exists()) {
-    return snap.data();
-  }
-
-  // No cloud data yet for this phone — migrate legacy localStorage data if present,
-  // otherwise start fresh.
-  const legacy = readLegacyLocalStore();
-  const initial = legacy && legacy.people ? legacy : emptyStore();
-  await setDoc(ref, initial);
-  if (legacy) {
-    localStorage.removeItem(LEGACY_LOCAL_STORE_KEY); // migrated, no longer needed
-  }
-  return initial;
+  if (!snap.exists()) throw new Error('Account not found');
+  return snap.data();
 }
 
 async function saveStore(store) {
-  const phone = auth.getRegisteredPhone();
-  if (!phone) throw new Error('Not signed in');
-  await setDoc(userDocRef(phone), store);
+  const username = auth.getUsername();
+  if (!username) throw new Error('Not signed in');
+  await setDoc(userDocRef(username), store);
 }
 
 function withBalance(person, store) {
@@ -170,12 +139,14 @@ export const api = {
   // --- Backup helpers (export/import) ---
   async exportData() {
     const store = await loadStore();
-    return JSON.stringify(store, null, 2);
+    const { salt, passwordHash, ...appData } = store;
+    return JSON.stringify(appData, null, 2);
   },
 
   async importData(jsonString) {
     const parsed = JSON.parse(jsonString);
     if (!parsed.people || !parsed.transactions) throw new Error('Invalid backup file');
-    await saveStore(parsed);
+    const store = await loadStore();
+    await saveStore({ ...store, ...parsed });
   },
 };

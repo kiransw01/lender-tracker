@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { auth } from '../auth.js';
 import PersonCard from '../components/PersonCard.jsx';
-import AddPersonModal from '../components/AddPersonModal.jsx';
+import PersonModal from '../components/PersonModal.jsx';
 import { formatCurrency } from '../format.js';
 
 export default function PeopleList({ onLogout }) {
@@ -73,7 +73,7 @@ export default function PeopleList({ onLogout }) {
         <div className="header-actions">
           <button className="secondary" onClick={handleExport}>Export</button>
           <button className="secondary" onClick={handleImportClick}>Import</button>
-          <button className="secondary" onClick={handleLogout}>Lock</button>
+          <button className="secondary" onClick={handleLogout}>Logout</button>
           <input
             ref={fileInputRef}
             type="file"
@@ -122,9 +122,9 @@ export default function PeopleList({ onLogout }) {
       <button className="fab" onClick={() => setShowAdd(true)} aria-label="Add person">+</button>
 
       {showAdd && (
-        <AddPersonModal
+        <PersonModal
           onClose={() => setShowAdd(false)}
-          onCreated={() => {
+          onSaved={() => {
             setShowAdd(false);
             load();
           }}
