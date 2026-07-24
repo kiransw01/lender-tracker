@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Pin a stable npm version
+        run: npm install -g npm@10.8.2
+
       - name: Install dependencies
         working-directory: frontend
         run: npm install --no-audit --no-fund
