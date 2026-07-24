@@ -2,12 +2,20 @@ import { useState } from 'react';
 import { auth } from '../auth.js';
 import { verifyBiometricCredential, isBiometricSupported } from '../webauthn.js';
 
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const hasBiometric = auth.hasBiometric(username) && isBiometricSupported();
   const hasPin = auth.hasPin(username);
+  const name = auth.getRememberedDisplayName() || username;
 
   async function handlePinSubmit(e) {
     e.preventDefault();
@@ -41,9 +49,10 @@ export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
 
   return (
     <div className="login-screen">
-      <div className="login-card">
-        <div className="login-logo">₹</div>
-        <h1>Welcome back, {auth.getRememberedDisplayName() || username}</h1>
+      <div className="login-card unlock-card">
+        <div className="unlock-avatar">{getInitials(name)}</div>
+        <p className="unlock-greeting">Welcome back</p>
+        <h1 className="unlock-name">{name}</h1>
 
         {error && <div className="error-banner">{error}</div>}
 
@@ -54,14 +63,19 @@ export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
             onClick={handleBiometric}
             disabled={loading}
           >
-            👤 Unlock with Face ID / Touch ID
+            <span className="biometric-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M12 1a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V6a5 5 0 0 0-5-5Z" />
+                <path d="M8 11v1a4 4 0 0 0 8 0v-1M5 11c0 5 3 9 7 9s7-4 7-9M12 15v4" strokeLinecap="round" />
+              </svg>
+            </span>
+            Unlock with Face ID / Touch ID
           </button>
         )}
 
         {hasPin && (
           <form onSubmit={handlePinSubmit} className="pin-form">
-            <div className="field">
-              <label>Enter your PIN</label>
+            <div className="pin-dots-field">
               <input
                 autoFocus={!hasBiometric}
                 type="password"
@@ -69,7 +83,7 @@ export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
                 maxLength={6}
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                placeholder="••••"
+                placeholder="Enter PIN"
                 className="pin-input"
               />
             </div>
@@ -80,7 +94,7 @@ export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
         )}
 
         <button type="button" className="link-btn" onClick={onUseFullLogin}>
-          Use username &amp; password instead
+          Not you? Use username &amp; password
         </button>
       </div>
     </div>

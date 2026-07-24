@@ -299,110 +299,62 @@ button.danger { color: var(--red); }
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  position: relative;
-  overflow: hidden;
   margin: -16px;
 }
 
-.login-screen::before,
-.login-screen::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.35;
-  z-index: 0;
-  animation: float-orb 14s ease-in-out infinite;
-}
-.login-screen::before {
-  width: 320px;
-  height: 320px;
-  top: -80px;
-  left: -80px;
-  background: radial-gradient(circle, var(--accent), transparent 70%);
-}
-.login-screen::after {
-  width: 360px;
-  height: 360px;
-  bottom: -100px;
-  right: -80px;
-  background: radial-gradient(circle, var(--green), transparent 70%);
-  animation-delay: -7s;
-}
-
-@keyframes float-orb {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, -20px) scale(1.08); }
-}
-
 .login-card {
-  position: relative;
-  z-index: 1;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: 24px;
-  padding: 44px 32px;
-  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 32px;
+  max-width: 380px;
   width: 100%;
   text-align: center;
-  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.03) inset;
-  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.18);
 }
 
 .login-logo {
-  width: 68px;
-  height: 68px;
-  border-radius: 20px;
-  background: linear-gradient(155deg, rgba(34,197,94,0.25), rgba(34,197,94,0.06));
-  border: 1px solid rgba(34,197,94,0.3);
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   color: var(--green);
-  font-size: 2.1rem;
+  font-size: 1.7rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 22px;
-  box-shadow: 0 8px 24px -8px rgba(34,197,94,0.4);
+  margin: 0 auto 20px;
 }
 
 .login-card h1 {
-  font-size: 1.6rem;
-  margin: 0 0 8px;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--text), var(--text-dim));
-  -webkit-background-clip: text;
-  background-clip: text;
+  font-size: 1.4rem;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
-.login-subtitle { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 30px; line-height: 1.5; }
+.login-subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.5; }
 
-.login-card .field { margin-bottom: 18px; text-align: left; }
+.login-card .field { margin-bottom: 16px; text-align: left; }
 .login-card .field label {
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-weight: 600;
   color: var(--text-dim);
 }
 .login-card .field input {
-  padding: 13px 15px;
-  font-size: 1rem;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-2) 90%, transparent);
-  border: 1.5px solid var(--border);
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s;
 }
 .login-card .field input:focus {
   outline: none;
   border-color: var(--accent);
-  background: var(--surface-2);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .password-input { position: relative; display: flex; }
@@ -416,34 +368,74 @@ button.danger { color: var(--red); }
   border: none;
   color: var(--accent);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   padding: 6px 10px;
 }
 
 .login-btn {
   width: 100%;
-  margin-top: 10px;
-  padding: 14px;
-  font-size: 1rem;
-  font-weight: 700;
-  border-radius: 12px;
-  letter-spacing: 0.01em;
-  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--accent) 60%, transparent);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  margin-top: 6px;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
 }
-.login-btn:hover:not(:disabled) { transform: translateY(-1px); }
-.login-btn:active:not(:disabled) { transform: translateY(0); }
-.login-btn:disabled { opacity: 0.7; }
 
 .login-note {
   color: var(--text-dim);
   font-size: 0.78rem;
-  margin-top: 26px;
+  margin-top: 24px;
   line-height: 1.6;
-  padding-top: 20px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
 }
+
+/* Quick unlock screen */
+.unlock-card { padding-top: 44px; }
+.unlock-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  letter-spacing: 0.02em;
+}
+.unlock-greeting { color: var(--text-dim); font-size: 0.85rem; margin: 0; }
+.unlock-name {
+  font-size: 1.3rem;
+  margin: 2px 0 26px;
+  color: var(--text);
+  font-weight: 700;
+  word-break: break-word;
+}
+.biometric-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.biometric-icon { display: inline-flex; }
+.pin-form { margin-top: 4px; }
+.pin-dots-field { margin-bottom: 14px; }
+.pin-input {
+  width: 100%;
+  text-align: center;
+  font-size: 1.15rem;
+  letter-spacing: 0.3em;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.pin-input:focus { outline: none; border-color: var(--accent); }
 
 .link-btn {
   background: none;
@@ -479,10 +471,6 @@ button.danger { color: var(--red); }
   color: var(--accent);
   margin: 14px 0;
 }
-
-.biometric-btn { margin-bottom: 14px; }
-.pin-form { margin-top: 4px; }
-.pin-input { text-align: center; font-size: 1.3rem; letter-spacing: 0.3em; }
 
 .settings-tabs {
   display: flex;
