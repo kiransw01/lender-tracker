@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { auth } from '../auth.js';
 import RecoveryCodeModal from '../components/RecoveryCodeModal.jsx';
+import LoginBackground from '../components/LoginBackground.jsx';
 
 export default function Login({ onSuccess }) {
   const [mode, setMode] = useState('login'); // 'login' | 'forgot'
@@ -61,6 +62,7 @@ export default function Login({ onSuccess }) {
 
   return (
     <div className="login-screen">
+      <LoginBackground />
       <div className="login-card">
         <div className="login-logo">₹</div>
         <h1>Lender Tracker</h1>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { auth } from '../auth.js';
 import { verifyBiometricCredential, isBiometricSupported } from '../webauthn.js';
+import LoginBackground from '../components/LoginBackground.jsx';
 
 function getInitials(name) {
   if (!name) return '?';
@@ -49,6 +50,7 @@ export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
 
   return (
     <div className="login-screen">
+      <LoginBackground />
       <div className="login-card unlock-card">
         <div className="unlock-avatar">{getInitials(name)}</div>
         <p className="unlock-greeting">Welcome back</p>
