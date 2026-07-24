@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { auth } from '../auth.js';
 import { getStoredTheme, toggleTheme } from '../theme.js';
@@ -44,13 +43,6 @@ export default function PeopleList({ onLogout }) {
       (p) => p.name.toLowerCase().includes(q) || (p.notes && p.notes.toLowerCase().includes(q))
     );
   }, [people, search]);
-
-  const topOutstanding = useMemo(() => {
-    return people
-      .filter((p) => p.balance > 0)
-      .sort((a, b) => b.balance - a.balance)
-      .slice(0, 5);
-  }, [people]);
 
   async function handleExport() {
     const data = await api.exportData();
@@ -139,21 +131,6 @@ export default function PeopleList({ onLogout }) {
           <div className="summary-item">
             <div className="label">Outstanding</div>
             <div className="value red">{formatCurrency(summary.totalOutstanding)}</div>
-          </div>
-        </div>
-      )}
-
-      {topOutstanding.length > 0 && (
-        <div className="top-outstanding">
-          <h3>Who owes you the most</h3>
-          <div className="top-outstanding-list">
-            {topOutstanding.map((p, i) => (
-              <Link to={`/people/${p.id}`} key={p.id} className="top-outstanding-row">
-                <span className="rank">#{i + 1}</span>
-                <span className="rank-name">{p.name}</span>
-                <span className="rank-amount">{formatCurrency(p.balance)}</span>
-              </Link>
-            ))}
           </div>
         </div>
       )}

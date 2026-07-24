@@ -444,30 +444,3 @@ button.danger { color: var(--red); }
   gap: 10px;
   font-size: 0.85rem;
 }
-
-.top-outstanding {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
-.top-outstanding h3 { margin: 0 0 12px; font-size: 0.95rem; }
-.top-outstanding-list { display: flex; flex-direction: column; gap: 8px; }
-.top-outstanding-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  transition: background 0.15s;
-}
-.top-outstanding-row:hover { background: var(--surface-2); }
-.top-outstanding-row .rank {
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  font-weight: 700;
-  width: 24px;
-}
-.top-outstanding-row .rank-name { flex: 1; color: var(--text); font-weight: 600; }
-.top-outstanding-row .rank-amount { color: var(--red); font-weight: 700; }
