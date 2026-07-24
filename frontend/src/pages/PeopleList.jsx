@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { auth } from '../auth.js';
+import { getStoredTheme, toggleTheme } from '../theme.js';
 import PersonCard from '../components/PersonCard.jsx';
 import PersonModal from '../components/PersonModal.jsx';
 import { formatCurrency } from '../format.js';
@@ -11,6 +12,8 @@ export default function PeopleList({ onLogout }) {
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [theme, setTheme] = useState(getStoredTheme());
   const fileInputRef = useRef(null);
 
   async function load() {
@@ -30,6 +33,14 @@ export default function PeopleList({ onLogout }) {
   useEffect(() => {
     load();
   }, []);
+
+  const filteredPeople = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return people;
+    return people.filter(
+      (p) => p.name.toLowerCase().includes(q) || (p.notes && p.notes.toLowerCase().includes(q))
+    );
+  }, [people, search]);
 
   async function handleExport() {
     const data = await api.exportData();
@@ -66,11 +77,23 @@ export default function PeopleList({ onLogout }) {
     onLogout?.();
   }
 
+  function handleToggleTheme() {
+    setTheme(toggleTheme());
+  }
+
   return (
     <>
       <header className="top">
         <h1>Lender Tracker</h1>
         <div className="header-actions">
+          <button
+            className="secondary theme-toggle"
+            onClick={handleToggleTheme}
+            aria-label="Toggle theme"
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
           <button className="secondary" onClick={handleExport}>Export</button>
           <button className="secondary" onClick={handleImportClick}>Import</button>
           <button className="secondary" onClick={handleLogout}>Logout</button>
@@ -107,13 +130,31 @@ export default function PeopleList({ onLogout }) {
         </div>
       )}
 
+      {people.length > 0 && (
+        <div className="search-box">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search people by name…"
+          />
+          {search && (
+            <button className="search-clear" onClick={() => setSearch('')} aria-label="Clear search">
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="empty-state">Loading…</div>
       ) : people.length === 0 ? (
         <div className="empty-state">No people yet. Tap + to add someone.</div>
+      ) : filteredPeople.length === 0 ? (
+        <div className="empty-state">No matches for "{search}".</div>
       ) : (
         <div className="person-list">
-          {people.map((p) => (
+          {filteredPeople.map((p) => (
             <PersonCard key={p.id} person={p} />
           ))}
         </div>
