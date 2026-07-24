@@ -26,7 +26,7 @@ export default function TransactionModal({ personId, transaction, onClose, onSav
     setSaving(true);
     setError('');
     try {
-      const payload = { type, amount: numAmount, date, note };
+      const payload = { type, amount: numAmount, date: date || null, note };
       const result = isEdit
         ? await api.updateTransaction(transaction.id, payload)
         : await api.addTransaction(personId, payload);
@@ -75,8 +75,15 @@ export default function TransactionModal({ personId, transaction, onClose, onSav
             />
           </div>
           <div className="field">
-            <label>Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <label>Date (optional)</label>
+            <div className="date-input">
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              {date && (
+                <button type="button" className="date-clear" onClick={() => setDate('')}>
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
           <div className="field">
             <label>Note (optional)</label>

@@ -219,6 +219,20 @@ button.danger { color: var(--red); }
 .type-toggle button.active-given { background: rgba(248,113,113,0.15); color: var(--red); border-color: var(--red); }
 .type-toggle button.active-repaid { background: rgba(34,197,94,0.15); color: var(--green); border-color: var(--green); }
 
+.date-input { display: flex; gap: 8px; align-items: center; }
+.date-input input { flex: 1; }
+.date-clear {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.date-clear:hover { color: var(--red); border-color: var(--red); }
+
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
 .empty-state { color: var(--text-dim); text-align: center; padding: 40px 0; }

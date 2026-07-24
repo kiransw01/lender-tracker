@@ -49,7 +49,12 @@ export const api = {
     if (!person) throw new Error('Person not found');
     const transactions = store.transactions
       .filter((t) => String(t.person_id) === String(id))
-      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
+      .sort((a, b) => {
+        const aKey = a.date || a.created_at || '';
+        const bKey = b.date || b.created_at || '';
+        if (aKey !== bKey) return aKey < bKey ? 1 : -1;
+        return b.id - a.id;
+      });
     return { ...withBalance(person, store), transactions };
   },
 
@@ -98,7 +103,7 @@ export const api = {
       person_id: person.id,
       type,
       amount: numAmount,
-      date: date || new Date().toISOString().slice(0, 10),
+      date: date || null,
       note: note || null,
       created_at: new Date().toISOString(),
     };
@@ -114,7 +119,7 @@ export const api = {
     if (!tx) throw new Error('Transaction not found');
     if (type) tx.type = type;
     if (amount) tx.amount = Number(amount);
-    if (date) tx.date = date;
+    if (date !== undefined) tx.date = date || null;
     if (note !== undefined) tx.note = note;
     await saveStore(store);
     return tx;

@@ -7,7 +7,7 @@ export function formatCurrency(amount) {
 }
 
 export function formatDate(dateStr) {
-  if (!dateStr) return '';
+  if (!dateStr) return 'No date';
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
