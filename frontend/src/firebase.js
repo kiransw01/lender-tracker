@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -12,7 +12,16 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = initializeApp(firebaseConfig);
-export const db = getFirestore(firebaseApp);
+
+// Force long-polling instead of WebChannel/streaming — this avoids
+// "client is offline" errors in Safari Private Browsing, strict tracking
+// prevention, and some corporate/VPN networks that block the default
+// connection style Firestore normally uses.
+export const db = initializeFirestore(firebaseApp, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+});
+
 export const firebaseAuth = getAuth(firebaseApp);
 
 let anonSignInPromise = null;
