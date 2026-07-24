@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react';
 import { auth } from '../auth.js';
 import { isBiometricSupported, registerBiometricCredential } from '../webauthn.js';
 
-export default function AccountSettingsModal({ onClose }) {
+export default function AccountSettingsModal({ onClose, onProfileUpdated }) {
   const username = auth.getUsername();
-  const [tab, setTab] = useState('password'); // 'password' | 'unlock'
+  const [tab, setTab] = useState('profile'); // 'profile' | 'password' | 'unlock'
+
+  // profile
+  const [displayName, setDisplayName] = useState(auth.getDisplayName() || username);
+  const [nameError, setNameError] = useState('');
+  const [nameSuccess, setNameSuccess] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
 
   // change password
   const [currentPassword, setCurrentPassword] = useState('');
@@ -100,6 +106,12 @@ export default function AccountSettingsModal({ onClose }) {
 
         <div className="settings-tabs">
           <button
+            className={tab === 'profile' ? 'active' : ''}
+            onClick={() => setTab('profile')}
+          >
+            Profile
+          </button>
+          <button
             className={tab === 'password' ? 'active' : ''}
             onClick={() => setTab('password')}
           >
@@ -112,6 +124,47 @@ export default function AccountSettingsModal({ onClose }) {
             Quick unlock
           </button>
         </div>
+
+        {tab === 'profile' && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setNameError('');
+              setNameSuccess('');
+              setNameSaving(true);
+              try {
+                const saved = await auth.updateDisplayName(displayName);
+                setNameSuccess('Name updated.');
+                onProfileUpdated?.(saved);
+              } catch (err) {
+                setNameError(err.message);
+              } finally {
+                setNameSaving(false);
+              }
+            }}
+          >
+            {nameError && <div className="error-banner">{nameError}</div>}
+            {nameSuccess && <div className="success-banner">{nameSuccess}</div>}
+            <div className="field">
+              <label>Display name</label>
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your name"
+              />
+            </div>
+            <div className="field">
+              <label>Username</label>
+              <input value={username} disabled />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="secondary" onClick={onClose}>Close</button>
+              <button type="submit" className="primary" disabled={nameSaving}>
+                {nameSaving ? 'Saving…' : 'Save name'}
+              </button>
+            </div>
+          </form>
+        )}
 
         {tab === 'password' && (
           <form onSubmit={handleChangePassword}>

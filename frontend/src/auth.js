@@ -22,7 +22,9 @@ import { generateSalt, hashPassword } from './crypto.js';
 
 const SESSION_KEY = 'lender-tracker-session-v1';
 const USERNAME_KEY = 'lender-tracker-username-v1';
+const DISPLAY_NAME_KEY = 'lender-tracker-display-name-v1';
 const REMEMBERED_USERNAME_KEY = 'lender-tracker-remembered-username-v1';
+const REMEMBERED_DISPLAY_NAME_KEY = 'lender-tracker-remembered-display-name-v1';
 const PIN_KEY_PREFIX = 'lender-tracker-pin-v1:';
 const BIOMETRIC_KEY_PREFIX = 'lender-tracker-biometric-v1:';
 
@@ -53,6 +55,10 @@ export const auth = {
     return sessionStorage.getItem(USERNAME_KEY) || '';
   },
 
+  getDisplayName() {
+    return sessionStorage.getItem(DISPLAY_NAME_KEY) || '';
+  },
+
   isLoggedIn() {
     return sessionStorage.getItem(SESSION_KEY) === '1' && Boolean(this.getUsername());
   },
@@ -60,6 +66,7 @@ export const auth = {
   logout() {
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(USERNAME_KEY);
+    sessionStorage.removeItem(DISPLAY_NAME_KEY);
   },
 
   /**
@@ -70,8 +77,8 @@ export const auth = {
    *   password on the existing account (no data lost).
    * - Existing username with a password → verifies it matches.
    *
-   * Returns { username, recoveryCode } — recoveryCode is only present right
-   * after a brand-new account is created (show it to the user once).
+   * Returns { username, displayName, recoveryCode } — recoveryCode is only
+   * present right after a brand-new account is created (show it to the user once).
    */
   async authenticate(usernameInput, password) {
     const username = normalizeUsername(usernameInput);
@@ -87,6 +94,7 @@ export const auth = {
     const snap = await getDoc(ref);
 
     let recoveryCode;
+    let displayName = username;
 
     if (!snap.exists()) {
       // Sign up: brand new account
@@ -100,6 +108,7 @@ export const auth = {
         passwordHash,
         recoverySalt,
         recoveryCodeHash,
+        displayName,
         people: [],
         transactions: [],
         nextPersonId: 1,
@@ -107,6 +116,7 @@ export const auth = {
       });
     } else {
       const data = snap.data();
+      displayName = data.displayName || username;
       if (!data.passwordHash) {
         // Legacy account (created before passwords existed) — set it now.
         const salt = generateSalt();
@@ -114,7 +124,7 @@ export const auth = {
         recoveryCode = generateRecoveryCode();
         const recoverySalt = generateSalt();
         const recoveryCodeHash = await hashPassword(normalizeRecoveryCode(recoveryCode), recoverySalt);
-        await updateDoc(ref, { salt, passwordHash, recoverySalt, recoveryCodeHash });
+        await updateDoc(ref, { salt, passwordHash, recoverySalt, recoveryCodeHash, displayName });
       } else {
         const candidateHash = await hashPassword(password, data.salt);
         if (candidateHash !== data.passwordHash) {
@@ -124,8 +134,23 @@ export const auth = {
     }
 
     sessionStorage.setItem(USERNAME_KEY, username);
+    sessionStorage.setItem(DISPLAY_NAME_KEY, displayName);
     sessionStorage.setItem(SESSION_KEY, '1');
-    return { username, recoveryCode };
+    return { username, displayName, recoveryCode };
+  },
+
+  /** Update the account's display name (shown as "Welcome back, X"). */
+  async updateDisplayName(displayNameInput) {
+    const username = this.getUsername();
+    if (!username) throw new Error('Not signed in');
+    const displayName = (displayNameInput || '').trim();
+    if (!displayName) throw new Error('Name cannot be empty');
+    await updateDoc(userDocRef(username), { displayName });
+    sessionStorage.setItem(DISPLAY_NAME_KEY, displayName);
+    if (this.getRememberedUsername() === username) {
+      localStorage.setItem(REMEMBERED_DISPLAY_NAME_KEY, displayName);
+    }
+    return displayName;
   },
 
   /** Change password while logged in (requires current password). */
@@ -190,17 +215,26 @@ export const auth = {
 
   // --- "Remembered device" quick-unlock (local convenience layer) ---
 
-  rememberDevice(username) {
-    localStorage.setItem(REMEMBERED_USERNAME_KEY, normalizeUsername(username));
+  rememberDevice(username, displayName) {
+    const normalized = normalizeUsername(username);
+    localStorage.setItem(REMEMBERED_USERNAME_KEY, normalized);
+    if (displayName) {
+      localStorage.setItem(REMEMBERED_DISPLAY_NAME_KEY, displayName);
+    }
   },
 
   getRememberedUsername() {
     return localStorage.getItem(REMEMBERED_USERNAME_KEY) || '';
   },
 
+  getRememberedDisplayName() {
+    return localStorage.getItem(REMEMBERED_DISPLAY_NAME_KEY) || this.getRememberedUsername();
+  },
+
   forgetDevice() {
     const username = this.getRememberedUsername();
     localStorage.removeItem(REMEMBERED_USERNAME_KEY);
+    localStorage.removeItem(REMEMBERED_DISPLAY_NAME_KEY);
     if (username) {
       localStorage.removeItem(PIN_KEY_PREFIX + username);
       localStorage.removeItem(BIOMETRIC_KEY_PREFIX + username);
@@ -209,7 +243,9 @@ export const auth = {
 
   /** Resume a session for a remembered device without re-entering a password. */
   resumeSession(username) {
-    sessionStorage.setItem(USERNAME_KEY, normalizeUsername(username));
+    const normalized = normalizeUsername(username);
+    sessionStorage.setItem(USERNAME_KEY, normalized);
+    sessionStorage.setItem(DISPLAY_NAME_KEY, this.getRememberedDisplayName() || normalized);
     sessionStorage.setItem(SESSION_KEY, '1');
   },
 

@@ -16,6 +16,7 @@ export default function PeopleList({ onLogout }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [theme, setTheme] = useState(getStoredTheme());
+  const [displayName, setDisplayName] = useState(auth.getDisplayName());
   const fileInputRef = useRef(null);
 
   async function load() {
@@ -86,7 +87,10 @@ export default function PeopleList({ onLogout }) {
   return (
     <>
       <header className="top">
-        <h1>Lender Tracker</h1>
+        <div>
+          <h1>Lender Tracker</h1>
+          {displayName && <p className="header-greeting">Welcome, {displayName}</p>}
+        </div>
         <div className="header-actions">
           <button
             className="secondary theme-toggle"
@@ -177,7 +181,12 @@ export default function PeopleList({ onLogout }) {
         />
       )}
 
-      {showSettings && <AccountSettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <AccountSettingsModal
+          onClose={() => setShowSettings(false)}
+          onProfileUpdated={(newName) => setDisplayName(newName)}
+        />
+      )}
     </>
   );
 }

@@ -25,7 +25,7 @@ export default function Login({ onSuccess }) {
       if (result.recoveryCode) {
         setRecoveryCode(result.recoveryCode);
       } else {
-        auth.rememberDevice(result.username);
+        auth.rememberDevice(result.username, result.displayName);
         onSuccess();
       }
     } catch (err) {

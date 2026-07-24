@@ -43,8 +43,7 @@ export default function QuickUnlock({ username, onUnlocked, onUseFullLogin }) {
     <div className="login-screen">
       <div className="login-card">
         <div className="login-logo">₹</div>
-        <h1>Welcome back</h1>
-        <p className="login-subtitle">{username}</p>
+        <h1>Welcome back, {auth.getRememberedDisplayName() || username}</h1>
 
         {error && <div className="error-banner">{error}</div>}
 
