@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
-export default function AddTransactionModal({ personId, onClose, onCreated }) {
-  const [type, setType] = useState('GIVEN');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [note, setNote] = useState('');
+export default function TransactionModal({ personId, transaction, onClose, onSaved }) {
+  const isEdit = Boolean(transaction);
+  const [type, setType] = useState(transaction?.type || 'GIVEN');
+  const [amount, setAmount] = useState(transaction?.amount ?? '');
+  const [date, setDate] = useState(transaction?.date || new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState(transaction?.note || '');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -25,8 +26,11 @@ export default function AddTransactionModal({ personId, onClose, onCreated }) {
     setSaving(true);
     setError('');
     try {
-      const tx = await api.addTransaction(personId, { type, amount: numAmount, date, note });
-      onCreated(tx);
+      const payload = { type, amount: numAmount, date, note };
+      const result = isEdit
+        ? await api.updateTransaction(transaction.id, payload)
+        : await api.addTransaction(personId, payload);
+      onSaved(result);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -37,7 +41,7 @@ export default function AddTransactionModal({ personId, onClose, onCreated }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Add transaction</h3>
+        <h3>{isEdit ? 'Edit transaction' : 'Add transaction'}</h3>
         {error && <div className="error-banner">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="field">
@@ -80,7 +84,9 @@ export default function AddTransactionModal({ personId, onClose, onCreated }) {
           </div>
           <div className="modal-actions">
             <button type="button" className="secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving…' : 'Add'}</button>
+            <button type="submit" className="primary" disabled={saving}>
+              {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add'}
+            </button>
           </div>
         </form>
       </div>

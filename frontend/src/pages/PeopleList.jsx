@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
+import { auth } from '../auth.js';
 import PersonCard from '../components/PersonCard.jsx';
 import AddPersonModal from '../components/AddPersonModal.jsx';
 import { formatCurrency } from '../format.js';
 
-export default function PeopleList() {
+export default function PeopleList({ onLogout }) {
   const [people, setPeople] = useState([]);
   const [summary, setSummary] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -60,6 +61,11 @@ export default function PeopleList() {
     }
   }
 
+  function handleLogout() {
+    auth.logout();
+    onLogout?.();
+  }
+
   return (
     <>
       <header className="top">
@@ -67,6 +73,7 @@ export default function PeopleList() {
         <div className="header-actions">
           <button className="secondary" onClick={handleExport}>Export</button>
           <button className="secondary" onClick={handleImportClick}>Import</button>
+          <button className="secondary" onClick={handleLogout}>Lock</button>
           <input
             ref={fileInputRef}
             type="file"

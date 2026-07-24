@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
-import AddTransactionModal from '../components/AddTransactionModal.jsx';
+import TransactionModal from '../components/TransactionModal.jsx';
 import { formatCurrency, formatDate } from '../format.js';
 
 export default function PersonDetail() {
@@ -10,6 +10,7 @@ export default function PersonDetail() {
   const [person, setPerson] = useState(null);
   const [error, setError] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [editingTx, setEditingTx] = useState(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -80,18 +81,33 @@ export default function PersonDetail() {
                 {tx.note && <span className="tx-note">{tx.note}</span>}
                 <span className="tx-date">{formatDate(tx.date)}</span>
               </div>
-              <button className="tx-delete" onClick={() => handleDeleteTx(tx.id)}>Delete</button>
+              <div className="tx-row-actions">
+                <button className="tx-edit" onClick={() => setEditingTx(tx)}>Edit</button>
+                <button className="tx-delete" onClick={() => handleDeleteTx(tx.id)}>Delete</button>
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {showAdd && (
-        <AddTransactionModal
+        <TransactionModal
           personId={id}
           onClose={() => setShowAdd(false)}
-          onCreated={() => {
+          onSaved={() => {
             setShowAdd(false);
+            load();
+          }}
+        />
+      )}
+
+      {editingTx && (
+        <TransactionModal
+          personId={id}
+          transaction={editingTx}
+          onClose={() => setEditingTx(null)}
+          onSaved={() => {
+            setEditingTx(null);
             load();
           }}
         />

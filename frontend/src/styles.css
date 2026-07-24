@@ -168,7 +168,9 @@ button.danger { color: var(--red); }
 .tx-row .tx-date { color: var(--text-dim); font-size: 0.75rem; }
 .tx-row .tx-amount.given { color: var(--red); font-weight: 700; }
 .tx-row .tx-amount.repaid { color: var(--green); font-weight: 700; }
-.tx-row .tx-delete { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; margin-left: 8px; }
+.tx-row-actions { display: flex; gap: 4px; }
+.tx-row .tx-edit { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.9rem; }
+.tx-row .tx-delete { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; }
 
 .modal-overlay {
   position: fixed;
@@ -228,3 +230,39 @@ button.danger { color: var(--red); }
   border-radius: 8px;
   margin-bottom: 14px;
 }
+
+.login-screen {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+
+.login-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+  font-size: 1.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.login-card h1 { font-size: 1.3rem; margin: 0 0 8px; }
+.login-subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 20px; }
+.login-btn { width: 100%; margin-top: 4px; }
+.login-note { color: var(--text-dim); font-size: 0.75rem; margin-top: 18px; }
