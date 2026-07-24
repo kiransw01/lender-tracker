@@ -5,19 +5,19 @@ export default function Login({ onSuccess }) {
   const isFirstTime = !auth.isRegistered();
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
-      if (isFirstTime) {
-        auth.register(phone);
-      } else {
-        auth.login(phone);
-      }
+      await auth.signIn(phone);
       onSuccess();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -28,7 +28,7 @@ export default function Login({ onSuccess }) {
         <h1>Lender Tracker</h1>
         <p className="login-subtitle">
           {isFirstTime
-            ? 'Set your phone number to secure this app on this device.'
+            ? 'Enter your phone number to create your account.'
             : 'Enter your phone number to continue.'}
         </p>
         {error && <div className="error-banner">{error}</div>}
@@ -44,12 +44,14 @@ export default function Login({ onSuccess }) {
               placeholder="e.g. 9876543210"
             />
           </div>
-          <button type="submit" className="primary login-btn">
-            {isFirstTime ? 'Set up & continue' : 'Unlock'}
+          <button type="submit" className="primary login-btn" disabled={loading}>
+            {loading ? 'Please wait…' : isFirstTime ? 'Create account & continue' : 'Continue'}
           </button>
         </form>
         <p className="login-note">
-          Your data stays on this device only. This is a local lock, not an online account.
+          Your data is stored in the cloud, keyed to this phone number. Use the same
+          number on any device to see the same data. Don't share this app link + your
+          number publicly — anyone with both can view your data.
         </p>
       </div>
     </div>

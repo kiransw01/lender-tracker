@@ -1,10 +1,21 @@
-// Simple local device-lock auth: no server, no real SMS OTP.
-// First run: user sets their phone number as their "username" (stored in localStorage).
-// Every subsequent app open: user must re-enter that same phone number to unlock.
-// This is NOT secure authentication (data is in the same browser regardless) — it's a
-// lightweight gate to avoid casual/accidental access on a shared device.
+// Phone-number identity, backed by Firestore for real persistence.
+//
+// This is NOT real SMS/OTP-verified authentication — Firebase Phone Auth requires
+// billing/reCAPTCHA setup we're skipping for simplicity. Instead:
+//   - Your phone number is your "account key" in Firestore (users/{phone})
+//   - We sign in anonymously to Firebase under the hood just to satisfy Firestore's
+//     auth requirement
+//   - Anyone who knows your exact phone number could technically open your data if
+//     they also have the app URL — same trust model as a shared bookmark/password
+//     you haven't told anyone. Don't share your phone number+app link publicly.
+//
+// The upside: your data now lives in the cloud (Firestore), not just one browser's
+// localStorage, so clearing browser data / reinstalling / switching devices no
+// longer wipes it.
 
-const AUTH_KEY = 'lender-tracker-auth-v1';
+import { ensureFirebaseSignedIn } from './firebase.js';
+
+const REGISTERED_PHONE_KEY = 'lender-tracker-phone-v1';
 const SESSION_KEY = 'lender-tracker-session-v1';
 
 function normalizePhone(phone) {
@@ -12,42 +23,37 @@ function normalizePhone(phone) {
 }
 
 export const auth = {
+  normalizePhone,
+
   isRegistered() {
-    return Boolean(localStorage.getItem(AUTH_KEY));
+    return Boolean(localStorage.getItem(REGISTERED_PHONE_KEY));
   },
 
   getRegisteredPhone() {
-    return localStorage.getItem(AUTH_KEY) || '';
+    return localStorage.getItem(REGISTERED_PHONE_KEY) || '';
   },
 
-  register(phone) {
+  async signIn(phone) {
     const normalized = normalizePhone(phone);
     if (!normalized || normalized.length < 6) {
       throw new Error('Enter a valid phone number');
     }
-    localStorage.setItem(AUTH_KEY, normalized);
+    await ensureFirebaseSignedIn();
+    localStorage.setItem(REGISTERED_PHONE_KEY, normalized);
     sessionStorage.setItem(SESSION_KEY, '1');
-  },
-
-  login(phone) {
-    const normalized = normalizePhone(phone);
-    const registered = localStorage.getItem(AUTH_KEY);
-    if (normalized !== registered) {
-      throw new Error('Phone number does not match');
-    }
-    sessionStorage.setItem(SESSION_KEY, '1');
+    return normalized;
   },
 
   isLoggedIn() {
-    return sessionStorage.getItem(SESSION_KEY) === '1';
+    return sessionStorage.getItem(SESSION_KEY) === '1' && this.isRegistered();
   },
 
   logout() {
     sessionStorage.removeItem(SESSION_KEY);
   },
 
-  resetRegistration() {
-    localStorage.removeItem(AUTH_KEY);
+  switchAccount() {
+    localStorage.removeItem(REGISTERED_PHONE_KEY);
     sessionStorage.removeItem(SESSION_KEY);
   },
 };

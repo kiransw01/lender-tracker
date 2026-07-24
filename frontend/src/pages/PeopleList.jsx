@@ -31,8 +31,8 @@ export default function PeopleList({ onLogout }) {
     load();
   }, []);
 
-  function handleExport() {
-    const data = api.exportData();
+  async function handleExport() {
+    const data = await api.exportData();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -52,7 +52,7 @@ export default function PeopleList({ onLogout }) {
     try {
       const text = await file.text();
       if (!window.confirm('This will replace all current data with the backup file. Continue?')) return;
-      api.importData(text);
+      await api.importData(text);
       await load();
     } catch (err) {
       setError('Import failed: ' + err.message);

@@ -1,23 +1,62 @@
-// Local-first storage API — everything lives in the browser's localStorage.
-// No backend/server needed. Data never leaves the device unless you export it.
+// Firestore-backed storage API — one document per phone number, holding the full
+// { people, transactions, nextPersonId, nextTxId } shape (same as the old
+// localStorage version). This keeps all CRUD logic identical, just swapping where
+// the store is persisted.
 //
-// Same function names/shapes as the old REST-based api.js, so all
-// components/pages work unchanged.
+// On first login for a phone number, if there's leftover data in this browser's
+// localStorage (from the older local-only version of the app), it's migrated into
+// Firestore automatically so nothing is lost.
 
-const STORE_KEY = 'lender-tracker-data-v1';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db, ensureFirebaseSignedIn } from './firebase.js';
+import { auth } from './auth.js';
 
-function loadStore() {
+const LEGACY_LOCAL_STORE_KEY = 'lender-tracker-data-v1';
+
+function emptyStore() {
+  return { people: [], transactions: [], nextPersonId: 1, nextTxId: 1 };
+}
+
+function userDocRef(phone) {
+  return doc(db, 'users', phone);
+}
+
+function readLegacyLocalStore() {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return { people: [], transactions: [], nextPersonId: 1, nextTxId: 1 };
-    return JSON.parse(raw);
+    const raw = localStorage.getItem(LEGACY_LOCAL_STORE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch {
-    return { people: [], transactions: [], nextPersonId: 1, nextTxId: 1 };
+    return null;
   }
 }
 
-function saveStore(store) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(store));
+async function loadStore() {
+  await ensureFirebaseSignedIn();
+  const phone = auth.getRegisteredPhone();
+  if (!phone) throw new Error('Not signed in');
+
+  const ref = userDocRef(phone);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    return snap.data();
+  }
+
+  // No cloud data yet for this phone — migrate legacy localStorage data if present,
+  // otherwise start fresh.
+  const legacy = readLegacyLocalStore();
+  const initial = legacy && legacy.people ? legacy : emptyStore();
+  await setDoc(ref, initial);
+  if (legacy) {
+    localStorage.removeItem(LEGACY_LOCAL_STORE_KEY); // migrated, no longer needed
+  }
+  return initial;
+}
+
+async function saveStore(store) {
+  const phone = auth.getRegisteredPhone();
+  if (!phone) throw new Error('Not signed in');
+  await setDoc(userDocRef(phone), store);
 }
 
 function withBalance(person, store) {
@@ -27,23 +66,16 @@ function withBalance(person, store) {
   return { ...person, totalGiven, totalRepaid, balance: totalGiven - totalRepaid };
 }
 
-function delay() {
-  // keep the same async shape as the old fetch-based API
-  return Promise.resolve();
-}
-
 export const api = {
   async getPeople() {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     return store.people
       .map((p) => withBalance(p, store))
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
   async getPerson(id) {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     const person = store.people.find((p) => String(p.id) === String(id));
     if (!person) throw new Error('Person not found');
     const transactions = store.transactions
@@ -53,9 +85,8 @@ export const api = {
   },
 
   async createPerson({ name, notes }) {
-    await delay();
     if (!name || !name.trim()) throw new Error('name is required');
-    const store = loadStore();
+    const store = await loadStore();
     const person = {
       id: store.nextPersonId,
       name: name.trim(),
@@ -64,36 +95,33 @@ export const api = {
     };
     store.people.push(person);
     store.nextPersonId += 1;
-    saveStore(store);
+    await saveStore(store);
     return withBalance(person, store);
   },
 
   async updatePerson(id, { name, notes }) {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     const person = store.people.find((p) => String(p.id) === String(id));
     if (!person) throw new Error('Person not found');
     if (name && name.trim()) person.name = name.trim();
     if (notes !== undefined) person.notes = notes;
-    saveStore(store);
+    await saveStore(store);
     return withBalance(person, store);
   },
 
   async deletePerson(id) {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     store.people = store.people.filter((p) => String(p.id) !== String(id));
     store.transactions = store.transactions.filter((t) => String(t.person_id) !== String(id));
-    saveStore(store);
+    await saveStore(store);
     return null;
   },
 
   async addTransaction(personId, { type, amount, date, note }) {
-    await delay();
     if (!['GIVEN', 'REPAID'].includes(type)) throw new Error("type must be 'GIVEN' or 'REPAID'");
     const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0) throw new Error('amount must be a positive number');
-    const store = loadStore();
+    const store = await loadStore();
     const person = store.people.find((p) => String(p.id) === String(personId));
     if (!person) throw new Error('Person not found');
     const tx = {
@@ -107,34 +135,31 @@ export const api = {
     };
     store.transactions.push(tx);
     store.nextTxId += 1;
-    saveStore(store);
+    await saveStore(store);
     return tx;
   },
 
   async updateTransaction(id, { type, amount, date, note }) {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     const tx = store.transactions.find((t) => String(t.id) === String(id));
     if (!tx) throw new Error('Transaction not found');
     if (type) tx.type = type;
     if (amount) tx.amount = Number(amount);
     if (date) tx.date = date;
     if (note !== undefined) tx.note = note;
-    saveStore(store);
+    await saveStore(store);
     return tx;
   },
 
   async deleteTransaction(id) {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     store.transactions = store.transactions.filter((t) => String(t.id) !== String(id));
-    saveStore(store);
+    await saveStore(store);
     return null;
   },
 
   async getSummary() {
-    await delay();
-    const store = loadStore();
+    const store = await loadStore();
     const people = store.people.map((p) => withBalance(p, store));
     const totalGiven = people.reduce((s, p) => s + p.totalGiven, 0);
     const totalRepaid = people.reduce((s, p) => s + p.totalRepaid, 0);
@@ -143,14 +168,14 @@ export const api = {
   },
 
   // --- Backup helpers (export/import) ---
-  exportData() {
-    const store = loadStore();
+  async exportData() {
+    const store = await loadStore();
     return JSON.stringify(store, null, 2);
   },
 
-  importData(jsonString) {
+  async importData(jsonString) {
     const parsed = JSON.parse(jsonString);
     if (!parsed.people || !parsed.transactions) throw new Error('Invalid backup file');
-    saveStore(parsed);
+    await saveStore(parsed);
   },
 };

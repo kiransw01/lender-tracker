@@ -7,41 +7,42 @@ when, and how much has been repaid.
 
 **https://kiransw01.github.io/lender-tracker/**
 
-Open that link on your phone or computer and it just works — no signup, no server.
-Your data is stored **only in your own browser** (localStorage), never sent anywhere.
+Open on your phone or computer. Enter your phone number once to create your account —
+your data is stored in **Firebase Firestore (cloud)**, keyed to that phone number, and
+persists forever (until you delete it) across devices/browsers.
 
-On mobile, tap **Share → Add to Home Screen** (iOS) or the **install prompt** (Android/Chrome)
-to make it behave like a native app icon on your home screen.
-
-> ⚠️ Since data lives in your browser, it's per-device/per-browser. Use the **Export** button
-> on the home screen to download a JSON backup, and **Import** it on another device/browser to
-> move your data over.
+On mobile, tap **Share → Add to Home Screen** (iOS) or the install prompt (Android/Chrome)
+for a native-app-like icon.
 
 ## How it works
 
-- **Frontend**: React + Vite, built as a static PWA, auto-deployed to GitHub Pages via
-  GitHub Actions on every push to `main` (see `.github/workflows/deploy.yml`)
-- **Storage**: browser `localStorage` — no backend server, no database to host
-- **Data model**: People (name, notes) + Transactions (`GIVEN` or `REPAID`, amount, date, note).
-  Outstanding balance per person = sum(`GIVEN`) − sum(`REPAID`), computed automatically.
+- **Frontend**: React + Vite, static PWA, deployed to GitHub Pages (`gh-pages` branch)
+- **Storage**: Firebase **Firestore** — one document per phone number holding all your
+  people + transactions. Real cloud persistence, not tied to one browser.
+- **Login**: phone number is used as your account key. This is **not real SMS/OTP-verified
+  authentication** (that requires Firebase billing + reCAPTCHA setup) — under the hood we
+  sign in anonymously to Firebase just to satisfy Firestore's auth requirement. Practically,
+  this means: whoever knows your exact phone number *and* has this app's link can view your
+  data. Don't share your phone number + this link publicly. Treat your phone number here
+  like a lightweight password.
+- **Data model**: People (name, notes) + Transactions (`GIVEN`/`REPAID`, amount, date, note).
+  Balance per person = sum(`GIVEN`) − sum(`REPAID`), computed automatically.
 
-## Optional: self-hosted backend (advanced)
+## Firebase project setup (one-time, already done for this deployment)
 
-An Express + SQLite backend (`backend/`) is also included if you'd rather run a real server
-+ database instead of browser storage (e.g. to sync across devices yourself). It's **not**
-required for the GitHub Pages version above — the frontend works fully standalone.
+This repo is wired to Firebase project `lender-tracker-43e16`. To use your own Firebase
+project instead:
 
-```bash
-cd backend
-npm install
-npm run seed   # optional dummy data
-npm run dev    # http://localhost:4000
-```
+1. Create a project at https://console.firebase.google.com
+2. **Build → Firestore Database → Create database** (any region, start in production mode)
+3. **Build → Authentication → Sign-in method → Anonymous → Enable**
+   (we use anonymous auth under the hood, not real phone/SMS verification)
+4. **Firestore Database → Rules** — paste the contents of `firestore.rules` from this repo
+   and Publish
+5. **Project settings → General → Your apps → Web app** — copy the config object
+6. Paste that config into `frontend/src/firebase.js`
 
-To point the frontend at this backend instead of localStorage, you'd swap `frontend/src/api.js`
-back to fetch-based calls (see git history) and set `VITE_API_URL`.
-
-## Local development (frontend only)
+## Local development
 
 ```bash
 cd frontend
@@ -49,14 +50,24 @@ npm install
 npm run dev   # http://localhost:5173
 ```
 
-## Deploying your own copy
+## Deploying updates to GitHub Pages
 
-1. Fork/clone this repo
-2. In `frontend/vite.config.js`, set `base: '/<your-repo-name>/'`
-3. Push to `main` — GitHub Actions builds and deploys to Pages automatically
-4. In your repo → **Settings → Pages** → Source: **GitHub Actions**
+Since GitHub Actions had reliability issues installing npm packages in CI, this repo
+deploys by building locally and pushing the static output to the `gh-pages` branch:
+
+```bash
+cd frontend
+npm run build
+# copy dist/ contents to a fresh gh-pages branch and force-push
+```
+
+## Backup / restore
+
+Use the **Export** button (in the app header) to download a JSON backup of your data
+at any time, and **Import** to restore/merge a backup file back in — useful if you ever
+want an offline copy independent of Firebase.
 
 ## Privacy note
 
-No real financial data is committed to this repository. All personal entries live in your
-browser's local storage only, or in your exported backup files, which you control.
+No real financial data is committed to this repository. All personal entries live in
+Firestore under your phone number, or in your exported backup files, which you control.
