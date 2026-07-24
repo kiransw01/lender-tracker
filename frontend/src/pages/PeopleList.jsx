@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import PersonCard from '../components/PersonCard.jsx';
 import AddPersonModal from '../components/AddPersonModal.jsx';
@@ -10,6 +10,7 @@ export default function PeopleList() {
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef(null);
 
   async function load() {
     setLoading(true);
@@ -29,10 +30,51 @@ export default function PeopleList() {
     load();
   }, []);
 
+  function handleExport() {
+    const data = api.exportData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lender-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleImportFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      if (!window.confirm('This will replace all current data with the backup file. Continue?')) return;
+      api.importData(text);
+      await load();
+    } catch (err) {
+      setError('Import failed: ' + err.message);
+    } finally {
+      e.target.value = '';
+    }
+  }
+
   return (
     <>
       <header className="top">
         <h1>Lender Tracker</h1>
+        <div className="header-actions">
+          <button className="secondary" onClick={handleExport}>Export</button>
+          <button className="secondary" onClick={handleImportClick}>Import</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            style={{ display: 'none' }}
+            onChange={handleImportFile}
+          />
+        </div>
       </header>
 
       {error && <div className="error-banner">{error}</div>}

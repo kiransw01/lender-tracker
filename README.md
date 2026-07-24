@@ -1,74 +1,62 @@
 # Lender Tracker
 
 A simple app to track money lent to relatives/friends — who you gave money to, how much,
-when, and how much has been repaid. Works as a web app and as an installable "mobile app"
-(PWA — Progressive Web App, add to your phone's home screen).
+when, and how much has been repaid.
 
-## Stack
+## 🚀 Live app (one click, no install)
 
-- **Backend**: Node.js + Express + SQLite (`better-sqlite3`) — single-file DB, zero setup
-- **Frontend**: React + Vite, installable as a PWA (works on Android/iOS home screen)
+**https://kiransw01.github.io/lender-tracker/**
 
-## Features
+Open that link on your phone or computer and it just works — no signup, no server.
+Your data is stored **only in your own browser** (localStorage), never sent anywhere.
 
-- Add people (lenders you've given money to)
-- Add transactions per person: `GIVEN` (money you lent) or `REPAID` (money they paid back),
-  with amount, date, and a note (e.g. "site registration", "TV EMI", "PayTM")
-- Auto-calculated running balance (outstanding amount) per person
-- Overall total outstanding across everyone
-- Works offline-ish once installed as a PWA; installable on mobile home screen
+On mobile, tap **Share → Add to Home Screen** (iOS) or the **install prompt** (Android/Chrome)
+to make it behave like a native app icon on your home screen.
 
-## Project structure
+> ⚠️ Since data lives in your browser, it's per-device/per-browser. Use the **Export** button
+> on the home screen to download a JSON backup, and **Import** it on another device/browser to
+> move your data over.
 
-```
-lender-tracker/
-  backend/     Express + SQLite API
-  frontend/    React + Vite PWA
-```
+## How it works
 
-## Running locally
+- **Frontend**: React + Vite, built as a static PWA, auto-deployed to GitHub Pages via
+  GitHub Actions on every push to `main` (see `.github/workflows/deploy.yml`)
+- **Storage**: browser `localStorage` — no backend server, no database to host
+- **Data model**: People (name, notes) + Transactions (`GIVEN` or `REPAID`, amount, date, note).
+  Outstanding balance per person = sum(`GIVEN`) − sum(`REPAID`), computed automatically.
 
-### 1. Backend
+## Optional: self-hosted backend (advanced)
+
+An Express + SQLite backend (`backend/`) is also included if you'd rather run a real server
++ database instead of browser storage (e.g. to sync across devices yourself). It's **not**
+required for the GitHub Pages version above — the frontend works fully standalone.
 
 ```bash
 cd backend
 npm install
-npm run seed     # optional: adds a couple of dummy people/transactions
-npm run dev       # starts API on http://localhost:4000
+npm run seed   # optional dummy data
+npm run dev    # http://localhost:4000
 ```
 
-### 2. Frontend
+To point the frontend at this backend instead of localStorage, you'd swap `frontend/src/api.js`
+back to fetch-based calls (see git history) and set `VITE_API_URL`.
+
+## Local development (frontend only)
 
 ```bash
 cd frontend
 npm install
-npm run dev       # starts app on http://localhost:5173
+npm run dev   # http://localhost:5173
 ```
 
-The frontend expects the API at `http://localhost:4000` by default (see `frontend/.env`).
+## Deploying your own copy
 
-### 3. Installing as a "mobile app"
-
-Once the frontend is running (or deployed), open it in Chrome/Safari on your phone and use
-**"Add to Home Screen"**. It will behave like a native app (its own icon, full-screen, works
-offline for cached pages) thanks to the PWA setup.
-
-## Deploying
-
-- **Backend**: any Node host (Render, Railway, Fly.io, a VM, etc.) — just needs to persist
-  the `data.sqlite` file (or swap in a hosted Postgres/SQLite later).
-- **Frontend**: any static host (Vercel, Netlify, GitHub Pages) — set `VITE_API_URL` to your
-  deployed backend URL at build time.
-
-## Data model
-
-**Person**: `id`, `name`, `notes` (optional)
-
-**Transaction**: `id`, `person_id`, `type` (`GIVEN` | `REPAID`), `amount`, `date`, `note`
-
-Outstanding balance for a person = sum(`GIVEN`) − sum(`REPAID`).
+1. Fork/clone this repo
+2. In `frontend/vite.config.js`, set `base: '/<your-repo-name>/'`
+3. Push to `main` — GitHub Actions builds and deploys to Pages automatically
+4. In your repo → **Settings → Pages** → Source: **GitHub Actions**
 
 ## Privacy note
 
-This repo is set up with placeholder/dummy seed data only. Enter your real lending data
-through the running app — avoid committing real names/amounts into the git history.
+No real financial data is committed to this repository. All personal entries live in your
+browser's local storage only, or in your exported backup files, which you control.
