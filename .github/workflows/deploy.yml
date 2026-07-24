@@ -24,12 +24,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Pin a stable npm version
-        run: npm install -g npm@10.8.2
-
-      - name: Install dependencies
+      - name: Install dependencies (with retry)
         working-directory: frontend
-        run: npm install --no-audit --no-fund
+        run: |
+          for i in 1 2 3; do
+            npm install --no-audit --no-fund && break
+            echo "npm install failed (attempt $i), retrying..."
+            rm -rf node_modules
+            sleep 5
+          done
+          test -f node_modules/.bin/vite || (echo "vite binary missing after install" && exit 1)
 
       - name: Build
         working-directory: frontend
