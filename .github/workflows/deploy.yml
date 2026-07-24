@@ -26,18 +26,12 @@ jobs:
 
       - name: Install dependencies (with retry)
         working-directory: frontend
-        timeout-minutes: 5
+        timeout-minutes: 6
         run: |
           npm config set fetch-retries 5
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-timeout 300000
-          for i in 1 2 3; do
-            timeout 180 npm install --no-audit --no-fund --prefer-offline=false && break
-            echo "npm install failed/timed out (attempt $i), retrying..."
-            rm -rf node_modules
-            npm cache clean --force || true
-            sleep 5
-          done
+          timeout 300 npm install --no-audit --no-fund --loglevel verbose
           test -f node_modules/.bin/vite || (echo "vite binary missing after install" && exit 1)
 
       - name: Build
