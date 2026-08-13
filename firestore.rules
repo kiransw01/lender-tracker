@@ -2,9 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Anyone signed in (including anonymous) can read/write any user doc.
-    // Your phone number is effectively your "password" — don't share your
-    // phone number + this app's link publicly.
-    match /users/{phone} {
+    // Your username+password is effectively your "password" — don't share
+    // your username/password + this app's link publicly.
+    match /users/{username} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Standalone Income/Expense tracker data — separate collection, same
+    // trust model (keyed by username, requires being "signed in" via the
+    // anonymous Firebase auth used under the hood).
+    match /finance/{username} {
       allow read, write: if request.auth != null;
     }
   }
