@@ -60,14 +60,17 @@ export default function Finance() {
 
   return (
     <>
-      <Link to="/" className="back-link">← Back to Lender Tracker</Link>
+      <nav className="section-nav">
+        <Link to="/" className="section-nav-tab">🤝 Lending</Link>
+        <span className="section-nav-tab active">💵 Income &amp; Expenses</span>
+        <span className="section-nav-spacer" />
+        <button className="link-btn" onClick={handleExport}>Export</button>
+      </nav>
+
       <header className="top">
         <div>
           <h1>Income &amp; Expenses</h1>
           <p className="header-greeting">Track what you earn and spend — separate from lending.</p>
-        </div>
-        <div className="header-actions">
-          <button className="secondary" onClick={handleExport}>Export</button>
         </div>
       </header>
 

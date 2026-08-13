@@ -94,29 +94,36 @@ export default function PeopleList({ onLogout }) {
         </div>
         <div className="header-actions">
           <button
-            className="secondary theme-toggle"
+            className="icon-btn"
             onClick={handleToggleTheme}
             aria-label="Toggle theme"
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <button className="secondary" onClick={() => setShowSettings(true)} title="Account settings">
+          <button className="icon-btn" onClick={() => setShowSettings(true)} title="Account settings">
             ⚙️
           </button>
-          <Link to="/finance" className="secondary finance-link">💵 Income/Expenses</Link>
-          <button className="secondary" onClick={handleExport}>Export</button>
-          <button className="secondary" onClick={handleImportClick}>Import</button>
-          <button className="secondary" onClick={handleLogout}>Logout</button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            style={{ display: 'none' }}
-            onChange={handleImportFile}
-          />
+          <button className="icon-btn" onClick={handleLogout} title="Logout">
+            🚪
+          </button>
         </div>
       </header>
+
+      <nav className="section-nav">
+        <span className="section-nav-tab active">🤝 Lending</span>
+        <Link to="/finance" className="section-nav-tab">💵 Income &amp; Expenses</Link>
+        <span className="section-nav-spacer" />
+        <button className="link-btn" onClick={handleExport}>Export</button>
+        <button className="link-btn" onClick={handleImportClick}>Import</button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          style={{ display: 'none' }}
+          onChange={handleImportFile}
+        />
+      </nav>
 
       {error && <div className="error-banner">{error}</div>}
 
