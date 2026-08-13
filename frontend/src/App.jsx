@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PeopleList from './pages/PeopleList.jsx';
 import PersonDetail from './pages/PersonDetail.jsx';
+import Finance from './pages/Finance.jsx';
 import Login from './pages/Login.jsx';
 import QuickUnlock from './pages/QuickUnlock.jsx';
 import { auth } from './auth.js';
@@ -42,6 +43,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<PeopleList onLogout={() => setLoggedIn(false)} />} />
         <Route path="/people/:id" element={<PersonDetail />} />
+        <Route path="/finance" element={<Finance />} />
       </Routes>
     </div>
   );

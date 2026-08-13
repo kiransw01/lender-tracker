@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { auth } from '../auth.js';
 import { getStoredTheme, toggleTheme } from '../theme.js';
@@ -103,6 +104,7 @@ export default function PeopleList({ onLogout }) {
           <button className="secondary" onClick={() => setShowSettings(true)} title="Account settings">
             ⚙️
           </button>
+          <Link to="/finance" className="secondary finance-link">💵 Income/Expenses</Link>
           <button className="secondary" onClick={handleExport}>Export</button>
           <button className="secondary" onClick={handleImportClick}>Import</button>
           <button className="secondary" onClick={handleLogout}>Logout</button>

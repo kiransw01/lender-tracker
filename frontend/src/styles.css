@@ -64,6 +64,13 @@ header.top h1 {
   padding: 6px 12px;
   font-size: 0.8rem;
 }
+.finance-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
 
 .summary-card {
   background: var(--surface);
@@ -265,6 +272,8 @@ button.danger { color: var(--red); }
 }
 .type-toggle button.active-given { background: rgba(248,113,113,0.15); color: var(--red); border-color: var(--red); }
 .type-toggle button.active-repaid { background: rgba(34,197,94,0.15); color: var(--green); border-color: var(--green); }
+
+.finance-filter { margin-bottom: 16px; }
 
 .date-input { display: flex; gap: 8px; align-items: center; }
 .date-input input { flex: 1; }
